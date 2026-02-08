@@ -40,7 +40,7 @@ if name:
             st.write("Верен отговор! ✅")
             score = score + 1
         else:
-            st.write("❌ name, "столицата е Париж")
+            st.write(❌ name, "столицата е Париж")
 
     st.write("Въпрос 4: Коя е столицата на Италия?")
     answer4 = st.text_input("Твоят отговор:", key="4")
