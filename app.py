@@ -20,7 +20,7 @@ if name:
             st.write("Верен отговор! ✅")
             score = score + 1
         else:
-            st.write("❌ Абее", name,  "Столицата е София")
+            st.write("❌ Абее", name, "столицата е София")
 
     st.write("Въпрос 2: Коя е столицата на Германия?")
     answer2 = st.text_input("Твоят отговор:", key="2")
@@ -30,7 +30,7 @@ if name:
             st.write("Верен отговор! ✅")
             score = score + 1
         else:
-            st.write("Грешно ❌ Столицата е Берлин")
+            st.write("❌ Абее", name, "столицата е Берлин")
 
     st.write("Въпрос 3: Коя е столицата на Франция?")
     answer3 = st.text_input("Твоят отговор:", key="3")
@@ -40,7 +40,7 @@ if name:
             st.write("Верен отговор! ✅")
             score = score + 1
         else:
-            st.write("Грешно ❌ Столицата е Париж")
+            st.write("❌ name, "столицата е Париж")
 
     st.write("Въпрос 4: Коя е столицата на Италия?")
     answer4 = st.text_input("Твоят отговор:", key="4")
@@ -50,7 +50,7 @@ if name:
             st.write("Верен отговор! ✅")
             score = score + 1
         else:
-            st.write("Грешно ❌ Столицата е Рим")
+            st.write("❌ Абее", name, "столицата е Рим бе. Как можа това да го объркаш")
 
     st.write("Въпрос 5: Коя е столицата на Испания?")
     answer5 = st.text_input("Твоят отговор:", key="5")
