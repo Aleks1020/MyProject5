@@ -25,7 +25,7 @@ if name:
     st.write("Въпрос 2: Коя е столицата на Германия?")
     answer2 = st.text_input("Твоят отговор:", key="2")
 
-    if answer2 != "":
+    if answer2:
         if answer2.lower() == "берлин":
             st.write("Верен отговор! ✅")
             score = score + 1
@@ -35,7 +35,7 @@ if name:
     st.write("Въпрос 3: Коя е столицата на Франция?")
     answer3 = st.text_input("Твоят отговор:", key="3")
 
-    if answer3 != "":
+    if answer3:
         if answer3.lower() == "париж":
             st.write("Верен отговор! ✅")
             score = score + 1
@@ -45,7 +45,7 @@ if name:
     st.write("Въпрос 4: Коя е столицата на Италия?")
     answer4 = st.text_input("Твоят отговор:", key="4")
 
-    if answer4 != "":
+    if answer4:
         if answer4.lower() == "рим":
             st.write("Верен отговор! ✅")
             score = score + 1
