@@ -19,7 +19,7 @@ if answer1:
  if answer1.lower() == "софия":
             st.write("Верен отговор! ✅")
             score = score + 1
-        else:
+ else:
             st.write("❌ Абее", name, "столицата е София")
 
     st.write("Въпрос 2: Коя е столицата на Германия?")
