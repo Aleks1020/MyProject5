@@ -55,7 +55,7 @@ if name:
     st.write("Въпрос 5: Коя е столицата на Испания?")
     answer5 = st.text_input("Твоят отговор:", key="5")
 
-    if answer5 != "":
+    if answer5:
         if answer5.lower() == "мадрид":
             st.write("Верен отговор! ✅")
             score = score + 1
@@ -65,7 +65,7 @@ if name:
     st.write("Въпрос 6: Коя е столицата на Гърция?")
     answer6 = st.text_input("Твоят отговор:", key="6")
 
-    if answer6 != "":
+    if answer6:
         if answer6.lower() == "атина":
             st.write("Верен отговор! ✅")
             score = score + 1
@@ -75,42 +75,42 @@ if name:
     st.write("Въпрос 7: Коя е столицата на Румъния?")
     answer7 = st.text_input("Твоят отговор:", key="7")
 
-    if answer7 != "":
+    if answer7:
         if answer7.lower() == "букурещ":
             st.write("Верен отговор! ✅")
             score = score + 1
         else:
-            st.write("Грешно ❌ Столицата е Букурещ")
+            st.write("❌ Столицата е Букурещ")
 
     st.write("Въпрос 8: Коя е столицата на Сърбия?")
     answer8 = st.text_input("Твоят отговор:", key="8")
 
-    if answer8 != "":
+    if answer8:
         if answer8.lower() == "белград":
             st.write("Верен отговор! ✅")
             score = score + 1
         else:
-            st.write("Грешно ❌ Столицата е Белград")
+            st.write("❌ Грешно Столицата е Белград")
 
     st.write("Въпрос 9: Коя е столицата на Англия?")
     answer9 = st.text_input("Твоят отговор:", key="9")
 
-    if answer9 != "":
+    if answer9:
         if answer9.lower() == "лондон":
             st.write("Верен отговор! ✅")
             score = score + 1
         else:
-            st.write("Грешно ❌ Столицата е Лондон")
+            st.write("❌ Столицата е Лондон")
 
     st.write("Въпрос 10: Коя е столицата на Япония?")
     answer10 = st.text_input("Твоят отговор:", key="10")
 
-    if answer10 != "":
+    if answer10:
         if answer10.lower() == "токио":
             st.write("Верен отговор! ✅")
             score = score + 1
         else:
-            st.write("Грешно ❌ Столицата е Токио")
+            st.write("❌ Добре", name, " Това си беше трудно. Столицата е Токио")
 
     if st.button("Краен резултат"):
         st.write("-----")
