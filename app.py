@@ -16,7 +16,7 @@ if name:
     answer1 = st.text_input("Твоят отговор:", key="1")
 
 if answer1:  
-if answer1.lower() == "софия":
+ if answer1.lower() == "софия":
             st.write("Верен отговор! ✅")
             score = score + 1
         else:
