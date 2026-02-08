@@ -20,7 +20,7 @@ if name:
             st.write("Верен отговор! ✅")
             score = score + 1
         else:
-            st.write("Грешно ❌ Столицата е София")
+            st.write("❌ Абее", name,  "Столицата е София")
 
     st.write("Въпрос 2: Коя е столицата на Германия?")
     answer2 = st.text_input("Твоят отговор:", key="2")
