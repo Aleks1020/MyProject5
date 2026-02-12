@@ -112,6 +112,15 @@ if name:
         else:
             st.write("❌ Добре", name, " Това си беше трудно. Столицата е Токио")
 
+   st.write ("Въпрос 11: Коя е столицата на Индия?")
+   answer11 = st.text_input ("Твоят отговор:" , key="11")
+    if answer11:
+        if answer11.lower() == "делхи":
+            st.write("Верен отговор! ✅")
+            score = score + 1
+        else:
+            st.write("❌ Добре", name, " Това си беше много трудно. Столицата е Делхи")
+    
     if st.button("Краен резултат"):
         st.write("-----")
         st.write("Твоят резултат е:", score, "от 10")
