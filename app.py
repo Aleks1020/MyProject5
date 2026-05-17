@@ -3,117 +3,151 @@ import requests
 import re
 
 # Настройка на страницата
-st.set_page_config(page_title="Pro Label Scanner", page_icon="🥗")
+st.set_page_config(page_title="Ultimate Food Scanner", page_icon="🛡️", layout="wide")
 
 # ==============================================================================
-# 1. ПЪЛНА БАЗА ДАННИ (РАЗШИРЕН СПИСЪК)
+# 1. ОБЕДИНЕНА И РАЗШИРЕНА БАЗА ДАННИ (БЕЗ СЪКРАЩЕНИЯ)
 # ==============================================================================
 INGREDIENTS_DB = {
-    # --- ЗЪРНЕНИ, ГЛУТЕН И БИРА ---
-    "ечеми": {"severity": "medium", "bg": {"name": "Ечемик / Малц (Глутен)", "effect": "Алерген, съдържа глутен. Висок гликемичен индекс.", "alternatives": ["Безглутенова бира", "Вода"]}, "en": {"name": "Barley/Malt", "effect": "Contains gluten.", "alternatives": ["GF Beer"]}},
-    "малц": {"severity": "medium", "bg": {"name": "Малц", "effect": "Концентрирани захари от зърно, вдигат инсулина.", "alternatives": ["Чай"]}, "en": {"name": "Malt", "effect": "Spikes insulin.", "alternatives": ["Tea"]}},
-    "хмел": {"severity": "low", "bg": {"name": "Хмел", "effect": "Естествен горчив агент, може да влияе на хормоните.", "alternatives": []}, "en": {"name": "Hops", "effect": "Hormonal influence.", "alternatives": []}},
-    "грис": {"severity": "medium", "bg": {"name": "Царевичен грис", "effect": "Рафиниран пълнител, често ГМО.", "alternatives": ["Чист малц"]}, "en": {"name": "Corn Grits", "effect": "Refined filler.", "alternatives": ["Pure malt"]}},
+    # --- Е600 СЕРИЯ: ВКУСОВИ ПОДОБРИТЕЛИ ---
+    "е621": {"severity": "high", "bg": {"name": "Е621 (Мононатриев глутамат)", "effect": "Невротоксин. Предизвиква пристрастяване, главоболие и уврежда нервните клетки.", "alts": ["sea_salt", "spices"]}},
+    "е622": {"severity": "high", "bg": {"name": "Е622 (Монокалиев глутамат)", "effect": "Може да причини гадене и сърцебиене.", "alts": ["spices"]}},
+    "е627": {"severity": "high", "bg": {"name": "Е627 (Динатриев гуанилат)", "effect": "Опасен за хора с подагра. Маскира лошото качество на храната.", "alts": ["yeast_free"]}},
+    "е631": {"severity": "high", "bg": {"name": "Е631 (Динатриев инозинат)", "effect": "Изкуствен подобрител, често комбиниран с Е621.", "alts": ["yeast_free"]}},
+    "е635": {"severity": "high", "bg": {"name": "Е635 (Динатриев 5-рибонуклеотид)", "effect": "Може да доведе до сериозни кожни обриви.", "alts": ["spices"]}},
+    "глутамат": {"severity": "high", "bg": {"name": "Глутамати", "effect": "Възбуждат мозъка изкуствено и пречат на засищането.", "alts": ["sea_salt"]}},
 
-    # --- ОПАСНИ КОНСЕРВАНТИ (Е-та) ---
-    "e211": {"severity": "high", "bg": {"name": "Е211 (Натриев бензоат)", "effect": "Силно токсичен, риск от рак при смесване с Вит. С.", "alternatives": ["Био консерванти"]}, "en": {"name": "E211", "effect": "Carcinogenic risk.", "alternatives": ["Fresh food"]}},
-    "е211": {"severity": "high", "bg": {"name": "Е211 (Натриев бензоат)", "effect": "Силно токсичен.", "alternatives": []}, "en": {"name": "E211", "effect": "Toxic.", "alternatives": []}},
-    "e250": {"severity": "high", "bg": {"name": "Е250 (Натриев нитрит)", "effect": "Използва се в колбаси. Силно канцерогенен.", "alternatives": ["Месо без нитрити"]}, "en": {"name": "E250", "effect": "Carcinogenic nitrite.", "alternatives": ["Fresh meat"]}},
-    "е250": {"severity": "high", "bg": {"name": "Е250 (Натриев нитрит)", "effect": "Канцерогенен.", "alternatives": []}, "en": {"name": "E250", "effect": "Carcinogen.", "alternatives": []}},
-    "e202": {"severity": "medium", "bg": {"name": "Е202 (Калиев сорбат)", "effect": "Консервант, може да предизвика алергии.", "alternatives": []}, "en": {"name": "E202", "effect": "Preservative.", "alternatives": []}},
+    # --- Е400 СЕРИЯ: ФОСФАТИ И СТАБИЛИЗАТОРИ (Топено сирене, колбаси) ---
+    "е450": {"severity": "high", "bg": {"name": "Е450 (Дифосфати)", "effect": "Извличат калция от костите. Водят до остеопороза.", "alts": ["labne", "cottage"]}},
+    "е451": {"severity": "high", "bg": {"name": "Е451 (Трифосфати)", "effect": "Химически соли, натоварващи бъбреците и метаболизма.", "alts": ["labne", "cottage"]}},
+    "е452": {"severity": "high", "bg": {"name": "Е452 (Полифосфати)", "effect": "Пречат на усвояването на минерали. Вредят на сърцето.", "alts": ["labne"]}},
+    "е407": {"severity": "medium", "bg": {"name": "Е407 (Карагенан)", "effect": "Използва се за гъстота. Може да причини язви и възпаления.", "alts": ["natural_yogurt"]}},
+    "е412": {"severity": "low", "bg": {"name": "Е412 (Гума гуар)", "effect": "Стабилизатор. При големи количества действа слабително.", "alts": []}},
 
-    # --- ВКУСОВИ ПОДОБРИТЕЛИ ---
-    "e621": {"severity": "high", "bg": {"name": "Е621 (Глутамат)", "effect": "Невротоксин, причинява главоболие и пристрастяване.", "alternatives": ["Естествени подправки"]}, "en": {"name": "E621 (MSG)", "effect": "Neurotoxin.", "alternatives": ["Spices"]}},
-    "е621": {"severity": "high", "bg": {"name": "Е621 (Глутамат)", "effect": "Невротоксин.", "alternatives": []}, "en": {"name": "E621", "effect": "MSG.", "alternatives": []}},
-    "глутамат": {"severity": "high", "bg": {"name": "Мононатриев глутамат", "effect": "Изкуствен подобрител на вкуса.", "alternatives": []}, "en": {"name": "MSG", "effect": "Flavor enhancer.", "alternatives": []}},
+    # --- Е200 СЕРИЯ: КОНСЕРВАНТИ (Нитрити и Нитрати) ---
+    "е250": {"severity": "high", "bg": {"name": "Е250 (Натриев нитрит)", "effect": "Силно канцерогенен. Може да образува нитрозамини в стомаха.", "alts": ["fresh_meat"]}},
+    "е251": {"severity": "high", "bg": {"name": "Е251 (Натриев нитрат)", "effect": "Използва се за консервиране. Опасен при загряване.", "alts": ["fresh_meat"]}},
+    "е249": {"severity": "high", "bg": {"name": "Е249 (Калиев нитрит)", "effect": "Токсичен за кръвта. Намалява кислорода в клетките.", "alts": ["fresh_meat"]}},
+    "е211": {"severity": "high", "bg": {"name": "Е211 (Натриев бензоат)", "effect": "Причинява алергии и уврежда клетъчните митохондрии.", "alts": ["homemade_juice"]}},
+    "нитрит": {"severity": "high", "bg": {"name": "Нитрити", "effect": "Опасни консерванти в месни продукти.", "alts": ["fresh_meat"]}},
+    "нитрат": {"severity": "high", "bg": {"name": "Нитрати", "effect": "Токсични вещества, често превишени в зеленчуци и меса.", "alts": ["fresh_meat"]}},
 
-    # --- ПОДСЛАДИТЕЛИ (Много важни) ---
-    "аспартам": {"severity": "high", "bg": {"name": "Аспартам (E951)", "effect": "Изкуствен подсладител, свързан с неврологични проблеми.", "alternatives": ["Стевия"]}, "en": {"name": "Aspartame", "effect": "Artificial sweetener.", "alternatives": ["Stevia"]}},
-    "aspartame": {"severity": "high", "bg": {"name": "Аспартам", "effect": "Изкуствен подсладител.", "alternatives": ["Stevia"]}, "en": {"name": "Aspartame", "effect": "Sweetener.", "alternatives": ["Stevia"]}},
-    "захар": {"severity": "medium", "bg": {"name": "Захар", "effect": "Води до инсулинова резистентност и затлъстяване.", "alternatives": ["Еритритол"]}, "en": {"name": "Sugar", "effect": "High calories.", "alternatives": ["Erythritol"]}},
-    "глюкоз": {"severity": "high", "bg": {"name": "Глюкозно-фруктозен сироп", "effect": "Уврежда черния дроб по-бързо от захарта.", "alternatives": ["Мед"]}, "en": {"name": "HFCS", "effect": "Liver damage risk.", "alternatives": ["Honey"]}},
-    "фруктоз": {"severity": "medium", "bg": {"name": "Добавена фруктоза", "effect": "Натоварва метаболизма на мазнините.", "alternatives": []}, "en": {"name": "Fructose", "effect": "Metabolic strain.", "alternatives": []}},
+    # --- ПОДСЛАДИТЕЛИ И ЗАХАРИ ---
+    "аспартам": {"severity": "high", "bg": {"name": "Аспартам (E951)", "effect": "Изкуствен подсладител. Потенциален риск за мозъка.", "alts": ["stevia", "erythritol"]}},
+    "е951": {"severity": "high", "bg": {"name": "Е951", "effect": "Аспартам. Опасен химикал в 'диетични' напитки.", "alts": ["stevia"]}},
+    "е950": {"severity": "high", "bg": {"name": "Е950 (Ацесулфам К)", "effect": "Изкуствен химикал, по-сладък от захарта 200 пъти.", "alts": ["erythritol"]}},
+    "глюкоз": {"severity": "high", "bg": {"name": "Глюкозно-фруктозен сироп", "effect": "Води до мастен черен дроб и бързо затлъстяване.", "alts": ["honey"]}},
+    "захар": {"severity": "medium", "bg": {"name": "Захар", "effect": "Празни калории, руши зъбите и имунитета.", "alts": ["stevia", "honey"]}},
 
     # --- МАЗНИНИ ---
-    "палмов": {"severity": "high", "bg": {"name": "Палмово масло", "effect": "Наситени мазнини, запушващи съдовете.", "alternatives": ["Зехтин"]}, "en": {"name": "Palm Oil", "effect": "Clogs arteries.", "alternatives": ["Olive oil"]}},
-    "хидрогени": {"severity": "high", "bg": {"name": "Хидрогенирани мазнини", "effect": "Трансмазнини - най-опасните за сърцето.", "alternatives": ["Краве масло"]}, "en": {"name": "Hydrogenated Fat", "effect": "Trans fats.", "alternatives": ["Butter"]}},
-    "рафиниран": {"severity": "medium", "bg": {"name": "Рафинирано олио", "effect": "Омега-6 излишък, причинява възпаления.", "alternatives": ["Студено пресовано олио"]}, "en": {"name": "Refined oil", "effect": "Inflammatory.", "alternatives": ["Cold-pressed"]}},
+    "палмов": {"severity": "high", "bg": {"name": "Палмова мазнина", "effect": "Наситени мазнини, които запушват артериите.", "alts": ["butter", "olive_oil"]}},
+    "хидрогени": {"severity": "high", "bg": {"name": "Хидрогенирани мазнини", "effect": "Трансмазнини. Основна причина за сърдечни заболявания.", "alts": ["olive_oil"]}},
+    "рафиниран": {"severity": "medium", "bg": {"name": "Рафинирани масла", "effect": "Извлечени чрез химикали. Предизвикват възпаления.", "alts": ["extra_virgin"]}},
 
     # --- ОЦВЕТИТЕЛИ ---
-    "e133": {"severity": "high", "bg": {"name": "Е133 (Брилянтно синьо)", "effect": "Синтетичен оцветител, забранен в някои страни.", "alternatives": ["Естествени оцветители"]}, "en": {"name": "E133", "effect": "Synthetic dye.", "alternatives": ["Natural color"]}},
-    "e102": {"severity": "high", "bg": {"name": "Е102 (Тартразин)", "effect": "Причинява хиперактивност при деца.", "alternatives": []}, "en": {"name": "E102", "effect": "Hyperactivity risk.", "alternatives": []}},
-    "оцветител": {"severity": "medium", "bg": {"name": "Изкуствен оцветител", "effect": "Може да предизвика алергични реакции.", "alternatives": []}, "en": {"name": "Artificial color", "effect": "Allergy risk.", "alternatives": []}}
+    "е102": {"severity": "high", "bg": {"name": "Е102 (Тартразин)", "effect": "Жълт оцветител. Предизвиква астма и копривна треска.", "alts": ["natural_colors"]}},
+    "е133": {"severity": "high", "bg": {"name": "Е133 (Брилянтно синьо)", "effect": "Синтетична боя. Може да дразни храносмилането.", "alts": ["natural_colors"]}},
+    "е120": {"severity": "medium", "bg": {"name": "Е120 (Кармин)", "effect": "Оцветител от насекоми. Силно алергизиращ.", "alts": ["natural_colors"]}},
+
+    # --- ЗЪРНЕНИ И АЛКОХОЛ ---
+    "ечеми": {"severity": "medium", "bg": {"name": "Ечемик / Малц (Глутен)", "effect": "Алерген за много хора. Висок гликемичен индекс.", "alts": ["water", "kombucha"]}},
+    "малц": {"severity": "medium", "bg": {"name": "Малц", "effect": "Обработено зърно с бързи захари.", "alts": ["tea"]}},
+    "хмел": {"severity": "low", "bg": {"name": "Хмел", "effect": "Може да промени хормоналния баланс при мъжете.", "alts": []}},
+    "грис": {"severity": "medium", "bg": {"name": "Царевичен грис", "effect": "Рафиниран пълнител, често ГМО.", "alts": ["pure_malt_beer"]}},
+    "алкохол": {"severity": "high", "bg": {"name": "Алкохол", "effect": "Токсичен за черния дроб и нервната система.", "alts": ["water"]}}
 }
 
 # ==============================================================================
-# 2. ИНТЕРФЕЙС И ФУНКЦИИ
+# 2. ПОДРОБНА БИБЛИОТЕКА ЗА ЗАМЕСТИТЕЛИ
 # ==============================================================================
-lang_choice = st.sidebar.selectbox("Език / Language", ["Български (BG)", "English (EN)"])
-lang = "bg" if "Български" in lang_choice else "en"
+ALTS_LIB = {
+    "labne": {"name": "Лабне (Цедено мляко)", "desc": "Естествен продукт, получен чрез изцеждане на кисело мляко. Гъсто, маслено и без никакви фосфати или химия."},
+    "cottage": {"name": "Котидж сирене", "desc": "Сирене на малки зърна, богато на протеин (казеин). Идеално за диети, без добавени консерванти."},
+    "fresh_meat": {"name": "Прясно месо", "desc": "Най-безопасният избор. Опечете месо у дома вместо да купувате колбаси с нитрити."},
+    "stevia": {"name": "Стевия", "desc": "Растение, което е многократно по-сладко от захарта, но не съдържа калории и не храни бактериите в устата."},
+    "erythritol": {"name": "Еритритол", "desc": "Естествен подсладител, който се среща в плодовете. Има 0 калории и не причинява подуване."},
+    "honey": {"name": "Натурален мед", "desc": "Пълен с витамини и ензими, но съдържа захар, така че консумирайте с мярка."},
+    "olive_oil": {"name": "Зехтин Екстра Върджин", "desc": "Студено пресована мазнина от маслини. Лекува съдовете и сърцето."},
+    "butter": {"name": "Краве масло (82% масленост)", "desc": "Чист животински продукт. Съдържа витамини A, E и K2. Далеч по-добре от маргарин."},
+    "sea_salt": {"name": "Морска сол", "desc": "Нерафинирана сол, която съдържа йод, магнезий и други минерали от морето."},
+    "spices": {"name": "Чисти подправки", "desc": "Босилек, мащерка, черен пипер. Придават вкус без да увреждат нервните клетки."},
+    "kombucha": {"name": "Комбуча", "desc": "Жива напитка, получена от ферментация на чай. Пълна с пробиотици за здрави черва."},
+    "pure_malt_beer": {"name": "Бира '100% малц'", "desc": "Бира, произведена по традиционна рецепта без добавен царевичен грис или ориз."},
+    "yeast_free": {"name": "Продукти без дрожди", "desc": "Храни, които не съдържат екстракт от дрожди (често използван параван за глутамат)."},
+    "natural_yogurt": {"name": "Чисто кисело мляко", "desc": "Търсете такова по БДС стандарта – само мляко и закваска."},
+    "homemade_juice": {"name": "Домашен сок/смути", "desc": "Изцеден плод у дома. Без бензоати и без изкуствени бои."},
+    "extra_virgin": {"name": "Студено пресовани масла", "desc": "Масла, извлечени механично, без нагряване и хексан (химикал)."},
+    "natural_colors": {"name": "Натурални оцветители", "desc": "Екстракти от цвекло, бета-каротин или грозде вместо синтетични Е-номера."},
+    "tea": {"name": "Билков чай", "desc": "Натурална напитка, богата на антиоксиданти. Без добавени подсладители."}
+}
 
-st.title("🥗 PRO Ingredient Scanner")
-st.write("Качете ясна снимка от галерията за най-добър анализ.")
+# ==============================================================================
+# 3. ИНТЕРФЕЙС И ЛОГИКА
+# ==============================================================================
+st.title("🛡️ Пълен Експертен Анализатор на Храни")
+st.write("Този скенер използва най-голямата ни база данни за Е-номера, мазнини и захари.")
 
-tab1, tab2 = st.tabs(["📁 Галерия / Gallery", "📷 Камера / Camera"])
-img_file = None
+# Опции за качване
+tab1, tab2 = st.tabs(["📁 Галерия (Най-добро качество)", "📷 Камера на момента"])
+img_data = None
 
 with tab1:
-    uploaded = st.file_uploader("Избери файл", type=["jpg", "jpeg", "png"])
-    if uploaded: img_file = uploaded
+    f = st.file_uploader("Качи снимка на етикета", type=["jpg", "png", "jpeg"])
+    if f: img_data = f
 with tab2:
-    camera = st.camera_input("Снимай")
-    if camera: img_file = camera
+    c = st.camera_input("Снимай етикета отблизо")
+    if c: img_data = c
 
-def ocr_process(img_bytes, target_lang):
-    api_lang = "bul" if target_lang == "bg" else "eng"
+def get_text(img_bytes):
     try:
-        payload = {'apikey': 'helloworld', 'language': api_lang, 'scale': True, 'isTable': True}
-        files = {'filename': ('img.jpg', img_bytes, 'image/jpeg')}
-        r = requests.post('https://api.ocr.space/parse/image', data=payload, files=files)
-        return r.json()["ParsedResults"][0]["ParsedText"]
+        # Използваме 'isTable=True' за по-добра структура на текста
+        payload = {'apikey': 'helloworld', 'language': 'bul', 'scale': True, 'isTable': True}
+        files = {'filename': ('label.jpg', img_bytes, 'image/jpeg')}
+        res = requests.post('https://api.ocr.space/parse/image', data=payload, files=files)
+        return res.json()["ParsedResults"][0]["ParsedText"]
     except: return ""
 
-# ==============================================================================
-# 3. АНАЛИЗ
-# ==============================================================================
-if img_file:
-    st.image(img_file, use_container_width=True)
-    with st.spinner("Анализиране..."):
-        raw_text = ocr_process(img_file.getvalue(), lang)
+if img_data:
+    st.image(img_data, width=350)
+    with st.spinner("Проверка на всяка съставка..."):
+        text_raw = get_text(img_data.getvalue()).lower()
+        # Почистване от всякакви символи, които OCR-ът добавя погрешно
+        text_clean = re.sub(r'[^а-я0-9a-z\s]', ' ', text_raw)
         
-        # Почистване: премахваме черти, скоби и символи, за да останат само буквите
-        clean_text = re.sub(r'[^а-яА-Яa-zA-Z0-9\s]', ' ', raw_text.lower())
-        
-        if not raw_text.strip():
-            st.error("Текстът не беше разчетен. Опитайте пак.")
-            st.stop()
-
         found = []
-        high_risk, med_risk = 0, 0
-        
         for key, info in INGREDIENTS_DB.items():
-            if key in clean_text:
-                if info[lang]["name"] not in [i["name"] for i in found]:
-                    found.append(info[lang])
-                    if info["severity"] == "high": high_risk += 1
-                    elif info["severity"] == "medium": med_risk += 1
+            if key in text_clean:
+                if info["bg"]["name"] not in [i["bg"]["name"] for i in found]:
+                    found.append(info)
 
         st.divider()
-        if not found:
-            st.success("✅ Чист продукт! Не открихме вредни съставки от базата ни данни.")
+        if found:
+            st.error(f"🛑 Открихме {len(found)} рискови елемента!")
+            
+            left, right = st.columns(2)
+            
+            with left:
+                st.subheader("⚠️ Анализ на вредните вещества:")
+                for item in found:
+                    with st.expander(f"📌 {item['bg']['name']}"):
+                        st.write(f"**Риск:** {item['bg']['effect']}")
+            
+            with right:
+                st.subheader("🥗 Препоръчани заместители:")
+                st.write("*(Кликни върху името за подробна информация)*")
+                alts_to_show = set()
+                for item in found:
+                    for a_id in item['bg']['alts']:
+                        alts_to_show.add(a_id)
+                
+                for a_id in alts_to_show:
+                    data = ALTS_LIB.get(a_id)
+                    if data:
+                        # ИНТЕРАКТИВНО: Разгъва се при клик
+                        with st.status(f"✅ {data['name']}", expanded=False):
+                            st.info(data['desc'])
         else:
-            if high_risk >= 1 or med_risk >= 2:
-                st.error("🚨 ВНИМАНИЕ: Открити са опасни или вредни съставки!")
-            else:
-                st.warning("⚠️ Внимавайте: Продуктът съдържа умерено рискови съставки.")
-
-            for item in found:
-                st.markdown(f"**• 🛑 {item['name']}**")
-                st.write(f"_{item['effect']}_")
-
-            alts = set()
-            for item in found:
-                for a in item.get("alternatives", []): alts.add(a)
-            if alts:
-                st.subheader("💡 Здравословни замени:")
-                for a in alts: st.success(f"👉 {a}")
+            st.success("✅ Продуктът изглежда чист според нашия пълен списък!")
+            if text_raw.strip():
+                with st.expander("Виж какво разчете камерата"):
+                    st.text(text_raw)
