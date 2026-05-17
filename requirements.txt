@@ -1,1 +1,4 @@
-pandas
+opencv-python
+easyocr
+torch
+torchvision
