@@ -1,220 +1,119 @@
 import streamlit as st
 import requests
-from PIL import Image
-import io
 import re
 
-# Настройка на заглавието на страницата в браузъра
-st.set_page_config(page_title="Smart Label Scanner", page_icon="🥗")
+# Настройка на страницата
+st.set_page_config(page_title="Pro Label Scanner", page_icon="🥗")
 
 # ==============================================================================
-# 1. ПЪЛЕН СПИСЪК (БАЗА ДАННИ) НА ВРЕДНИТЕ СЪСТАВКИ (ДВУЕЗИЧЕН)
+# 1. ПЪЛНА БАЗА ДАННИ (РАЗШИРЕН СПИСЪК)
 # ==============================================================================
 INGREDIENTS_DB = {
-    # --- СПИСЪК: АЛКОХОЛ ---
-    "алкохол": {
-        "severity": "high",
-        "bg": {"name": "Алкохол (Етанол)", "effect": "Токсичен за черния дроб и нервната система. Силно дехидратира тялото.", "alternatives": ["Вода", "Натурален студен чай", "Безалкохолен коктейл"]},
-        "en": {"name": "Alcohol (Ethanol)", "effect": "Toxic to the liver and nervous system. Causes severe dehydration.", "alternatives": ["Water", "Natural iced tea", "Mocktails"]}
-    },
-    "alcohol": {
-        "severity": "high",
-        "bg": {"name": "Алкохол (Етанол)", "effect": "Токсичен за черния дроб и нервната система. Силно дехидратира тялото.", "alternatives": ["Вода", "Натурален студен чай", "Безалкохолен коктейл"]},
-        "en": {"name": "Alcohol (Ethanol)", "effect": "Toxic to the liver and nervous system. Causes severe dehydration.", "alternatives": ["Water", "Natural iced tea", "Mocktails"]}
-    },
-    "етанол": {
-        "severity": "high",
-        "bg": {"name": "Етанол", "effect": "Чист алкохол. Влияе негативно на мозъчната дейност и черния дроб.", "alternatives": ["Чисти сокове", "Вода"]},
-        "en": {"name": "Ethanol", "effect": "Pure alcohol. Negatively affects brain function and liver.", "alternatives": ["Pure juices", "Water"]}
-    },
-    "ethanol": {
-        "severity": "high",
-        "bg": {"name": "Етанол", "effect": "Чист алкохол. Влияе негативно на мозъчната дейност и черния дроб.", "alternatives": ["Чисти сокове", "Вода"]},
-        "en": {"name": "Ethanol", "effect": "Pure alcohol. Negatively affects brain function and liver.", "alternatives": ["Pure juices", "Water"]}
-    },
+    # --- ЗЪРНЕНИ, ГЛУТЕН И БИРА ---
+    "ечеми": {"severity": "medium", "bg": {"name": "Ечемик / Малц (Глутен)", "effect": "Алерген, съдържа глутен. Висок гликемичен индекс.", "alternatives": ["Безглутенова бира", "Вода"]}, "en": {"name": "Barley/Malt", "effect": "Contains gluten.", "alternatives": ["GF Beer"]}},
+    "малц": {"severity": "medium", "bg": {"name": "Малц", "effect": "Концентрирани захари от зърно, вдигат инсулина.", "alternatives": ["Чай"]}, "en": {"name": "Malt", "effect": "Spikes insulin.", "alternatives": ["Tea"]}},
+    "хмел": {"severity": "low", "bg": {"name": "Хмел", "effect": "Естествен горчив агент, може да влияе на хормоните.", "alternatives": []}, "en": {"name": "Hops", "effect": "Hormonal influence.", "alternatives": []}},
+    "грис": {"severity": "medium", "bg": {"name": "Царевичен грис", "effect": "Рафиниран пълнител, често ГМО.", "alternatives": ["Чист малц"]}, "en": {"name": "Corn Grits", "effect": "Refined filler.", "alternatives": ["Pure malt"]}},
 
-    # --- СПИСЪК: ЗАХАРИ И ПОДСЛАДИТЕЛИ ---
-    "захар": {
-        "severity": "medium",
-        "bg": {"name": "Бяла захар", "effect": "Води до резки скокове в инсулина, риск от затлъстяване, диабет и кариеси.", "alternatives": ["Стевия", "Еритритол", "Мед"]},
-        "en": {"name": "Sugar", "effect": "Causes sharp insulin spikes, risks of obesity, type 2 diabetes, and tooth decay.", "alternatives": ["Stevia", "Erythritol", "Honey"]}
-    },
-    "sugar": {
-        "severity": "medium",
-        "bg": {"name": "Бяла захар", "effect": "Води до резки скокове в инсулина, риск от затлъстяване, диабет и кариеси.", "alternatives": ["Стевия", "Еритритол", "Мед"]},
-        "en": {"name": "Sugar", "effect": "Causes sharp insulin spikes, risks of obesity, type 2 diabetes, and tooth decay.", "alternatives": ["Stevia", "Erythritol", "Honey"]}
-    },
-    "глюкоз": {
-        "severity": "high",
-        "bg": {"name": "Глюкозно-фруктозен сироп", "effect": "Рязко натоварва черния дроб, превръща се директно в мазнини, уврежда метаболизма.", "alternatives": ["Продукти без добавена захар", "Пресни плодове"]},
-        "en": {"name": "Glucose-Fructose Syrup / HFCS", "effect": "Strains the liver, converts directly into fat, disrupts metabolism.", "alternatives": ["No added sugar products", "Fresh fruits"]}
-    },
-    "glucose": {
-        "severity": "high",
-        "bg": {"name": "Глюкозно-фруктозен сироп", "effect": "Рязко натоварва черния дроб, превръща се директно в мазнини, уврежда метаболизма.", "alternatives": ["Продукти без добавена захар", "Пресни плодове"]},
-        "en": {"name": "Glucose-Fructose Syrup / HFCS", "effect": "Strains the liver, converts directly into fat, disrupts metabolism.", "alternatives": ["No added sugar products", "Fresh fruits"]}
-    },
+    # --- ОПАСНИ КОНСЕРВАНТИ (Е-та) ---
+    "e211": {"severity": "high", "bg": {"name": "Е211 (Натриев бензоат)", "effect": "Силно токсичен, риск от рак при смесване с Вит. С.", "alternatives": ["Био консерванти"]}, "en": {"name": "E211", "effect": "Carcinogenic risk.", "alternatives": ["Fresh food"]}},
+    "е211": {"severity": "high", "bg": {"name": "Е211 (Натриев бензоат)", "effect": "Силно токсичен.", "alternatives": []}, "en": {"name": "E211", "effect": "Toxic.", "alternatives": []}},
+    "e250": {"severity": "high", "bg": {"name": "Е250 (Натриев нитрит)", "effect": "Използва се в колбаси. Силно канцерогенен.", "alternatives": ["Месо без нитрити"]}, "en": {"name": "E250", "effect": "Carcinogenic nitrite.", "alternatives": ["Fresh meat"]}},
+    "е250": {"severity": "high", "bg": {"name": "Е250 (Натриев нитрит)", "effect": "Канцерогенен.", "alternatives": []}, "en": {"name": "E250", "effect": "Carcinogen.", "alternatives": []}},
+    "e202": {"severity": "medium", "bg": {"name": "Е202 (Калиев сорбат)", "effect": "Консервант, може да предизвика алергии.", "alternatives": []}, "en": {"name": "E202", "effect": "Preservative.", "alternatives": []}},
 
-    # --- СПИСЪК: ХИДРОГЕНИРАНИ МАЗНИНИ ---
-    "палмово": {
-        "severity": "high",
-        "bg": {"name": "Палмово масло", "effect": "Богато на наситени мазнини, които запушват артериите и вдигат лошия холестерол (LDL).", "alternatives": ["Студено пресован зехтин", "Краве масло", "Кокосово масло"]},
-        "en": {"name": "Palm Oil", "effect": "High in saturated fats, which can clog arteries and increase bad cholesterol (LDL).", "alternatives": ["Extra virgin olive oil", "Butter", "Coconut oil"]}
-    },
-    "palm": {
-        "severity": "high",
-        "bg": {"name": "Палмово масло", "effect": "Богато на наситени мазнини, които запушват артериите и вдигат лошия холестерол (LDL).", "alternatives": ["Студено пресован зехтин", "Краве масло", "Кокосово масло"]},
-        "en": {"name": "Palm Oil", "effect": "High in saturated fats, which can clog arteries and increase bad cholesterol (LDL).", "alternatives": ["Extra virgin olive oil", "Butter", "Coconut oil"]}
-    },
-    "хидрогенирани": {
-        "severity": "high",
-        "bg": {"name": "Хидрогенирани мазнини (Трансмазнини)", "effect": "Най-опасните мазнини. Предизвикват сериозни сърдечно-съдови заболявания и вътрешни възпаления.", "alternatives": ["Нерафинирани растителни масла"]},
-        "en": {"name": "Hydrogenated Fats (Trans Fats)", "effect": "The most dangerous fats. Directly linked to heart disease, strokes, and systemic inflammation.", "alternatives": ["Unrefined vegetable oils"]}
-    },
-    "hydrogenated": {
-        "severity": "high",
-        "bg": {"name": "Хидрогенирани мазнини (Трансмазнини)", "effect": "Най-опасните мазнини. Предизвикват сериозни сърдечно-съдови заболявания и вътрешни възпаления.", "alternatives": ["Нерафинирани растителни масла"]},
-        "en": {"name": "Hydrogenated Fats (Trans Fats)", "effect": "The most dangerous fats. Directly linked to heart disease, strokes, and systemic inflammation.", "alternatives": ["Unrefined vegetable oils"]}
-    },
+    # --- ВКУСОВИ ПОДОБРИТЕЛИ ---
+    "e621": {"severity": "high", "bg": {"name": "Е621 (Глутамат)", "effect": "Невротоксин, причинява главоболие и пристрастяване.", "alternatives": ["Естествени подправки"]}, "en": {"name": "E621 (MSG)", "effect": "Neurotoxin.", "alternatives": ["Spices"]}},
+    "е621": {"severity": "high", "bg": {"name": "Е621 (Глутамат)", "effect": "Невротоксин.", "alternatives": []}, "en": {"name": "E621", "effect": "MSG.", "alternatives": []}},
+    "глутамат": {"severity": "high", "bg": {"name": "Мононатриев глутамат", "effect": "Изкуствен подобрител на вкуса.", "alternatives": []}, "en": {"name": "MSG", "effect": "Flavor enhancer.", "alternatives": []}},
 
-    # --- СПИСЪК: ОПАСНИ Е-ТА ---
-    "e211": {
-        "severity": "high",
-        "bg": {"name": "Е211 (Натриев бензоат)", "effect": "Химически консервант. В комбинация с Витамин Ц може да образува бензен, който е силен канцероген.", "alternatives": ["Продукти без консерванти"]},
-        "en": {"name": "E211 (Sodium Benzoate)", "effect": "Preservative. Can form benzene (carcinogen) when mixed with Vitamin C.", "alternatives": ["Preservative-free food"]}
-    },
-    "е211": { 
-        "severity": "high",
-        "bg": {"name": "Е211 (Натриев бензоат)", "effect": "Химически консервант. В комбинация с Витамин Ц може да образува бензен, който е силен канцероген.", "alternatives": ["Продукти без консерванти"]},
-        "en": {"name": "E211 (Sodium Benzoate)", "effect": "Preservative. Can form benzene (carcinogen) when mixed with Vitamin C.", "alternatives": ["Preservative-free food"]}
-    },
-    "e621": {
-        "severity": "high",
-        "bg": {"name": "Е621 (Мононатриев глутамат)", "effect": "Изкуствен подобрител на вкуса. Предизвиква изкуствен апетит и главоболие.", "alternatives": ["Чисти подправки", "Хималайска сол"]},
-        "en": {"name": "E621 (Monosodium Glutamate / MSG)", "effect": "Flavor enhancer. Can trigger headaches and overeating.", "alternatives": ["Pure spices", "Sea salt"]}
-    },
-    "е621": {
-        "severity": "high",
-        "bg": {"name": "Е621 (Мононатриев глутамат)", "effect": "Изкуствен подобрител на вкуса. Предизвиква изкуствен апетит и главоболие.", "alternatives": ["Чисти подправки", "Хималайска сол"]},
-        "en": {"name": "E621 (Monosodium Glutamate / MSG)", "effect": "Flavor enhancer. Can trigger headaches and overeating.", "alternatives": ["Pure spices", "Sea salt"]}
-    }
+    # --- ПОДСЛАДИТЕЛИ (Много важни) ---
+    "аспартам": {"severity": "high", "bg": {"name": "Аспартам (E951)", "effect": "Изкуствен подсладител, свързан с неврологични проблеми.", "alternatives": ["Стевия"]}, "en": {"name": "Aspartame", "effect": "Artificial sweetener.", "alternatives": ["Stevia"]}},
+    "aspartame": {"severity": "high", "bg": {"name": "Аспартам", "effect": "Изкуствен подсладител.", "alternatives": ["Stevia"]}, "en": {"name": "Aspartame", "effect": "Sweetener.", "alternatives": ["Stevia"]}},
+    "захар": {"severity": "medium", "bg": {"name": "Захар", "effect": "Води до инсулинова резистентност и затлъстяване.", "alternatives": ["Еритритол"]}, "en": {"name": "Sugar", "effect": "High calories.", "alternatives": ["Erythritol"]}},
+    "глюкоз": {"severity": "high", "bg": {"name": "Глюкозно-фруктозен сироп", "effect": "Уврежда черния дроб по-бързо от захарта.", "alternatives": ["Мед"]}, "en": {"name": "HFCS", "effect": "Liver damage risk.", "alternatives": ["Honey"]}},
+    "фруктоз": {"severity": "medium", "bg": {"name": "Добавена фруктоза", "effect": "Натоварва метаболизма на мазнините.", "alternatives": []}, "en": {"name": "Fructose", "effect": "Metabolic strain.", "alternatives": []}},
+
+    # --- МАЗНИНИ ---
+    "палмов": {"severity": "high", "bg": {"name": "Палмово масло", "effect": "Наситени мазнини, запушващи съдовете.", "alternatives": ["Зехтин"]}, "en": {"name": "Palm Oil", "effect": "Clogs arteries.", "alternatives": ["Olive oil"]}},
+    "хидрогени": {"severity": "high", "bg": {"name": "Хидрогенирани мазнини", "effect": "Трансмазнини - най-опасните за сърцето.", "alternatives": ["Краве масло"]}, "en": {"name": "Hydrogenated Fat", "effect": "Trans fats.", "alternatives": ["Butter"]}},
+    "рафиниран": {"severity": "medium", "bg": {"name": "Рафинирано олио", "effect": "Омега-6 излишък, причинява възпаления.", "alternatives": ["Студено пресовано олио"]}, "en": {"name": "Refined oil", "effect": "Inflammatory.", "alternatives": ["Cold-pressed"]}},
+
+    # --- ОЦВЕТИТЕЛИ ---
+    "e133": {"severity": "high", "bg": {"name": "Е133 (Брилянтно синьо)", "effect": "Синтетичен оцветител, забранен в някои страни.", "alternatives": ["Естествени оцветители"]}, "en": {"name": "E133", "effect": "Synthetic dye.", "alternatives": ["Natural color"]}},
+    "e102": {"severity": "high", "bg": {"name": "Е102 (Тартразин)", "effect": "Причинява хиперактивност при деца.", "alternatives": []}, "en": {"name": "E102", "effect": "Hyperactivity risk.", "alternatives": []}},
+    "оцветител": {"severity": "medium", "bg": {"name": "Изкуствен оцветител", "effect": "Може да предизвика алергични реакции.", "alternatives": []}, "en": {"name": "Artificial color", "effect": "Allergy risk.", "alternatives": []}}
 }
 
 # ==============================================================================
-# 2. ИНТЕРФЕЙС И ПОТРЕБИТЕЛСКИ ИЗБОР
+# 2. ИНТЕРФЕЙС И ФУНКЦИИ
 # ==============================================================================
-lang_choice = st.sidebar.selectbox("Изберете език / Choose language", ["Български (BG)", "English (EN)"])
+lang_choice = st.sidebar.selectbox("Език / Language", ["Български (BG)", "English (EN)"])
 lang = "bg" if "Български" in lang_choice else "en"
 
-if lang == "bg":
-    st.title("🥗 Скенер за вредни съставки")
-    st.write("Качете снимка на етикета или го заснемете с камерата, за да го анализираме.")
-    tab1_title, tab2_title = "📁 Качване от галерия", "📷 Снимка на момента"
-    upload_label = "Изберете снимка от устройството си:"
-    camera_label = "Насочете камерата към етикета:"
-else:
-    st.title("🥗 Ingredient Safety Scanner")
-    st.write("Upload a label photo or take one using your camera for analysis.")
-    tab1_title, tab2_title = "📁 Upload from Gallery", "📷 Take Live Photo"
-    upload_label = "Choose an image file from your device:"
-    camera_label = "Point your camera at the label text:"
+st.title("🥗 PRO Ingredient Scanner")
+st.write("Качете ясна снимка от галерията за най-добър анализ.")
 
-# Създаване на раздели (Tabs) за двата метода на въвеждане
-tab1, tab2 = st.tabs([tab1_title, tab2_title])
+tab1, tab2 = st.tabs(["📁 Галерия / Gallery", "📷 Камера / Camera"])
 img_file = None
 
 with tab1:
-    uploaded_file = st.file_uploader(upload_label, type=["jpg", "jpeg", "png"])
-    if uploaded_file is not None:
-        img_file = uploaded_file
-
+    uploaded = st.file_uploader("Избери файл", type=["jpg", "jpeg", "png"])
+    if uploaded: img_file = uploaded
 with tab2:
-    camera_file = st.camera_input(camera_label)
-    if camera_file is not None:
-        img_file = camera_file
+    camera = st.camera_input("Снимай")
+    if camera: img_file = camera
 
-# Функция за уеб-базиран OCR чрез OCR.Space API
-def ocr_space_file(img_bytes, target_lang):
+def ocr_process(img_bytes, target_lang):
     api_lang = "bul" if target_lang == "bg" else "eng"
     try:
-        payload = {
-            'apikey': 'helloworld',  # Безплатен публичен ключ
-            'language': api_lang,
-            'isOverlayRequired': False,
-            'scale': True
-        }
-        files = {'filename': ('image.jpg', img_bytes, 'image/jpeg')}
-        response = requests.post('https://api.ocr.space/parse/image', data=payload, files=files)
-        result = response.json()
-        
-        if result.get("OCRExitCode") == 1:
-            return result["ParsedResults"][0]["ParsedText"]
-        return ""
-    except Exception:
-        return ""
+        payload = {'apikey': 'helloworld', 'language': api_lang, 'scale': True, 'isTable': True}
+        files = {'filename': ('img.jpg', img_bytes, 'image/jpeg')}
+        r = requests.post('https://api.ocr.space/parse/image', data=payload, files=files)
+        return r.json()["ParsedResults"][0]["ParsedText"]
+    except: return ""
 
 # ==============================================================================
-# 3. ЛОГИКА ЗА СКАНИРАНЕ И АНАЛИЗ
+# 3. АНАЛИЗ
 # ==============================================================================
-if img_file is not None:
-    st.image(img_file, caption="Заредена снимка" if lang == "bg" else "Loaded image", use_container_width=True)
-    
-    with st.spinner("Четене на етикета..." if lang == "bg" else "Reading label..."):
-        img_bytes = img_file.getvalue()
-        full_text = ocr_space_file(img_bytes, lang)
+if img_file:
+    st.image(img_file, use_container_width=True)
+    with st.spinner("Анализиране..."):
+        raw_text = ocr_process(img_file.getvalue(), lang)
         
-        # Ако липсва текст на избрания език, тестваме с другия за сигурност
-        if not full_text.strip():
-            backup_lang = "en" if lang == "bg" else "bg"
-            full_text = ocr_space_file(img_bytes, backup_lang)
-
-        st.subheader("Прочетен текст от продукта:" if lang == "bg" else "Detected Text from Product:")
-        if full_text.strip():
-            st.info(full_text)
-        else:
-            st.error("Не беше разпознат текст. Моля, уверете се, че снимката е на фокус, текстът е хоризонтален и има добра светлина." if lang == "bg" else "No text detected. Please make sure the photo is focused, text is horizontal, and lighting is good.")
+        # Почистване: премахваме черти, скоби и символи, за да останат само буквите
+        clean_text = re.sub(r'[^а-яА-Яa-zA-Z0-9\s]', ' ', raw_text.lower())
+        
+        if not raw_text.strip():
+            st.error("Текстът не беше разчетен. Опитайте пак.")
             st.stop()
-        
-        # Търсене на съвпадения
-        text_lower = full_text.lower()
-        found_ingredients = []
-        high_risk_count = 0
-        medium_risk_count = 0
+
+        found = []
+        high_risk, med_risk = 0, 0
         
         for key, info in INGREDIENTS_DB.items():
-            if re.search(key, text_lower):
-                if info[lang]["name"] not in [i["name"] for i in found_ingredients]:
-                    found_ingredients.append(info[lang])
-                    if info["severity"] == "high":
-                        high_risk_count += 1
-                    elif info["severity"] == "medium":
-                        medium_risk_count += 1
-        
+            if key in clean_text:
+                if info[lang]["name"] not in [i["name"] for i in found]:
+                    found.append(info[lang])
+                    if info["severity"] == "high": high_risk += 1
+                    elif info["severity"] == "medium": med_risk += 1
+
         st.divider()
-        st.subheader("ЗДРАВНА ОЦЕНКА:" if lang == "bg" else "HEALTH EVALUATION:")
-        
-        if not found_ingredients:
-            st.success("✅ ПОЛЕЗЕН / ЧИСТ ПРОДУКТ! Не бяха открити вредни съставки от нашата база данни." if lang == "bg" else "✅ HEALTHY / CLEAN PRODUCT! No harmful ingredients were detected from our database.")
+        if not found:
+            st.success("✅ Чист продукт! Не открихме вредни съставки от базата ни данни.")
         else:
-            if high_risk_count >= 1 or medium_risk_count >= 3:
-                st.error("🚨 ВРЕДЕН ПРОДУКТ! Съдържа силно токсични или опасни за здравето вещества. Избягвайте консумацията!" if lang == "bg" else "🚨 HARMFUL PRODUCT! Contains highly toxic or hazardous substances. Avoid consuming!")
-                show_alternatives = True
+            if high_risk >= 1 or med_risk >= 2:
+                st.error("🚨 ВНИМАНИЕ: Открити са опасни или вредни съставки!")
             else:
-                st.warning("⚠️ СРЕДНО ПОЛЕЗЕН (Нещо по средата). Консумирайте в ограничени количества." if lang == "bg" else "⚠️ MODERATELY HEALTHY (In-between). Consume in limited quantities.")
-                show_alternatives = False
-            
-            st.write("🔍 **Конкретни открити съставки:**" if lang == "bg" else "🔍 **Specific detected ingredients:**")
-            all_alternatives = set()
-            
-            for ing in found_ingredients:
-                st.markdown(f"• 🛑 **{ing['name']}**")
-                st.write(f"  *Ефект върху тялото:* {ing['effect']}")
-                if show_alternatives:
-                    for alt in ing["alternatives"]:
-                        all_alternatives.add(alt)
-            
-            if show_alternatives and all_alternatives:
-                st.write("---")
-                st.subheader("💡 ЗДРАВОСЛОВНИ ЗАМЕСТИТЕЛИ:" if lang == "bg" else "💡 HEALTHY ALTERNATIVES:")
-                for alt in all_alternatives:
-                    st.success(f"👉 {alt}")
+                st.warning("⚠️ Внимавайте: Продуктът съдържа умерено рискови съставки.")
+
+            for item in found:
+                st.markdown(f"**• 🛑 {item['name']}**")
+                st.write(f"_{item['effect']}_")
+
+            alts = set()
+            for item in found:
+                for a in item.get("alternatives", []): alts.add(a)
+            if alts:
+                st.subheader("💡 Здравословни замени:")
+                for a in alts: st.success(f"👉 {a}")
