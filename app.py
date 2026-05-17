@@ -1,6 +1,7 @@
 import streamlit as st
-
+import requests
 from PIL import Image
+import io
 import re
 
 # Настройка на заглавието на страницата в браузъра
@@ -114,7 +115,7 @@ INGREDIENTS_DB = {
         "bg": {"name": "Е211 (Натриев бензоат)", "effect": "Химически консервант. В комбинация с Витамин Ц може да образува бензен, който е силен канцероген.", "alternatives": ["Продукти без консерванти", "Домашно приготвена храна"]},
         "en": {"name": "E211 (Sodium Benzoate)", "effect": "Chemical preservative. When combined with Vitamin C, it can form benzene, a known carcinogen.", "alternatives": ["Preservative-free food", "Homemade food"]}
     },
-    "е211": { # Хваща ако е написано с кирилско 'Е'
+    "е211": { 
         "severity": "high",
         "bg": {"name": "Е211 (Натриев бензоат)", "effect": "Химически консервант. В комбинация с Витамин Ц може да образува бензен, който е силен канцероген.", "alternatives": ["Продукти без консерванти", "Домашно приготвена храна"]},
         "en": {"name": "E211 (Sodium Benzoate)", "effect": "Chemical preservative. When combined with Vitamin C, it can form benzene, a known carcinogen.", "alternatives": ["Preservative-free food", "Homemade food"]}
@@ -131,12 +132,12 @@ INGREDIENTS_DB = {
     },
     "e250": {
         "severity": "high",
-        "bg": {"name": "Е250 (Натриев нитрит)", "effect": "Използва се масово в колбасите за розов цвят. Силно токсичен в по-големи количества, класифициран като канцерогенен.", "alternatives": ["Прясно чисто месо", "Продукти без нитрити"]},
+        "bg": {"name": "Е250 (Натриев нитрит)", "effect": "Използва се масово в колбасите за розов цвят. Силно toxic в по-големи количества, класифициран като канцерогенен.", "alternatives": ["Прясно чисто месо", "Продукти без нитрити"]},
         "en": {"name": "E250 (Sodium Nitrite)", "effect": "Commonly used in cured meats. Forms nitrosamines in the stomach, which are highly carcinogenic.", "alternatives": ["Fresh un-cured meat", "Nitrite-free products"]}
     },
     "е250": {
         "severity": "high",
-        "bg": {"name": "Е250 (Натриев нитрит)", "effect": "Използва се масово в колбасите за розов цвят. Силно токсичен в по-големи количества, класифициран като канцерогенен.", "alternatives": ["Прясно чисто месо", "Продукти без нитрити"]},
+        "bg": {"name": "Е250 (Натриев нитрит)", "effect": "Използва се масово в колбасите за розов цвят. Силно toxic в по-големи количества, класифициран като канцерогенен.", "alternatives": ["Прясно чисто месо", "Продукти без нитрити"]},
         "en": {"name": "E250 (Sodium Nitrite)", "effect": "Commonly used in cured meats. Forms nitrosamines in the stomach, which are highly carcinogenic.", "alternatives": ["Fresh un-cured meat", "Nitrite-free products"]}
     }
 }
@@ -156,8 +157,27 @@ else:
     st.write("Take a photo of the ingredients text on the product label to check its safety.")
     capture_label = "Point your camera at the label text:"
 
-# Компонент за пускане на камерата на живо в браузъра
 img_file = st.camera_input(capture_label)
+
+# Функция за уеб-базиран OCR чрез OCR.Space API
+def ocr_space_file(img_bytes, target_lang):
+    api_lang = "bul" if target_lang == "bg" else "eng"
+    try:
+        payload = {
+            'apikey': 'helloworld',  # Публичен безплатен ключ
+            'language': api_lang,
+            'isOverlayRequired': False,
+            'scale': True
+        }
+        files = {'filename': ('image.jpg', img_bytes, 'image/jpeg')}
+        response = requests.post('https://api.ocr.space/parse/image', data=payload, files=files)
+        result = response.json()
+        
+        if result.get("OCRExitCode") == 1:
+            return result["ParsedResults"][0]["ParsedText"]
+        return ""
+    except Exception:
+        return ""
 
 # ==============================================================================
 # 3. ЛОГИКА ЗА СКАНИРАНЕ И АНАЛИЗ
@@ -166,12 +186,14 @@ if img_file is not None:
     st.image(img_file, caption="Сканирана снимка" if lang == "bg" else "Scanned image")
     
     with st.spinner("Четене на етикета..." if lang == "bg" else "Reading label..."):
-        image = Image.open(img_file)
+        img_bytes = img_file.getvalue()
+        full_text = ocr_space_file(img_bytes, lang)
         
-        # Настройка на Tesseract за едновременно четене на БГ и ЕН
-        custom_config = r'-l bul+eng --psm 6'
-        full_text = pytesseract.image_to_string(image, config=custom_config)
-        
+        # Ако не разпознае нищо на избрания език, опитва с другия
+        if not full_text.strip():
+            backup_lang = "en" if lang == "bg" else "bg"
+            full_text = ocr_space_file(img_bytes, backup_lang)
+
         st.subheader("Прочетен текст от продукта:" if lang == "bg" else "Detected Text from Product:")
         if full_text.strip():
             st.info(full_text)
@@ -187,7 +209,6 @@ if img_file is not None:
         
         for key, info in INGREDIENTS_DB.items():
             if re.search(key, text_lower):
-                # Проверка за избягване на дублиране (ако намери съставката и на двата езика)
                 if info[lang]["name"] not in [i["name"] for i in found_ingredients]:
                     found_ingredients.append(info[lang])
                     if info["severity"] == "high":
@@ -198,212 +219,22 @@ if img_file is not None:
         st.divider()
         st.subheader("ЗДРАВНА ОЦЕНКА:" if lang == "bg" else "HEALTH EVALUATION:")
         
-        # --- Сценарий 1: Чист/Полезен продукт ---
         if not found_ingredients:
-            if lang == "bg":
-                st.success("✅ ПОЛЕЗЕН / ЧИСТ ПРОДУКТ! Не бяха открити вредни съставки от нашата база данни.")
-            else:
-                st.success("✅ HEALTHY / CLEAN PRODUCT! No harmful ingredients were detected from our database.")
-        
-        # --- Сценарий 2: Открити са вредни неща ---
+            st.success("✅ ПОЛЕЗЕН / ЧИСТ ПРОДУКТ! Не бяха открити вредни съставки от нашата база данни." if lang == "bg" else "✅ HEALTHY / CLEAN PRODUCT! No harmful ingredients were detected from our database.")
         else:
-            # Преценяване на нивото на опасност
             if high_risk_count >= 1 or medium_risk_count >= 3:
-                if lang == "bg":
-                    st.error("🚨 ВРЕДЕН ПРОДУКТ! Съдържа силно токсични или опасни за здравето вещества. Избягвайте консумацията!")
-                else:
-                    st.error("🚨 HARMFUL PRODUCT! Contains highly toxic or hazardous substances. Avoid consuming!")
+                st.error("🚨 ВРЕДЕН ПРОДУКТ! Съдържа силно токсични или опасни за здравето вещества. Избягвайте консумацията!" if lang == "bg" else "🚨 HARMFUL PRODUCT! Contains highly toxic or hazardous substances. Avoid consuming!")
                 show_alternatives = True
             else:
-                if lang == "bg":
-                    st.warning("⚠️ СРЕДНО ПОЛЕЗЕН (Нещо по средата). Консумирайте в ограничени количества и с повишено внимание.")
-                else:
-                    st.warning("⚠️ MODERATELY HEALTHY (In-between). Consume in limited quantities and with caution.")
+                st.warning("⚠️ СРЕДНО ПОЛЕЗЕН (Нещо по средата). Консумирайте в ограничени количества." if lang == "bg" else "⚠️ MODERATELY HEALTHY (In-between). Consume in limited quantities.")
                 show_alternatives = False
             
-            # Показване на списъка с открити вредители и ефектите им
             st.write("🔍 **Конкретни открити съставки:**" if lang == "bg" else "🔍 **Specific detected ingredients:**")
             all_alternatives = set()
             
             for ing in found_ingredients:
                 st.markdown(f"• 🛑 **{ing['name']}**")
                 st.write(f"  *Ефект върху тялото:* {ing['effect']}")
-                if show_alternatives:
-                    for alt in ing["alternatives"]:
-                        all_alternatives.add(alt)
-            
-            # --- Сценарий 3: Показване на здравословни алтернативи (само ако продуктът е много вреден) ---
-            if show_alternatives and all_alternatives:
-                st.write("---")
-                st.subheader("💡 ЗДРАВОСЛОВНИ ЗАМЕСТИТЕЛИ:" if lang == "bg" else "💡 HEALTHY ALTERNATIVES:")
-                st.write("Вместо този продукт, можете да изберете или използвате:" if lang == "bg" else "Instead of this product, you can choose or use:")
-                for alt in all_alternatives:
-                    st.success(f"👉 {alt}")
-import streamlit as st
-import requests
-from PIL import Image
-import io
-import re
-
-# Настройка на страницата
-st.set_page_config(page_title="Smart Label Scanner", page_icon="🥗")
-
-# ПЪЛЕН СПИСЪК НА ВРЕДНИТЕ СЪСТАВКИ
-INGREDIENTS_DB = {
-    "захар": {
-        "severity": "medium",
-        "bg": {"name": "Бяла захар", "effect": "Води до резки скокове в инсулина, риск от затлъстяване, диабет и кариеси.", "alternatives": ["Стевия", "Еритритол", "Мед"]},
-        "en": {"name": "Sugar", "effect": "Causes sharp insulin spikes, risks of obesity, type 2 diabetes, and tooth decay.", "alternatives": ["Stevia", "Erythritol", "Honey"]}
-    },
-    "sugar": {
-        "severity": "medium",
-        "bg": {"name": "Бяла захар", "effect": "Води до резки скокове в инсулина, риск от затлъстяване, диабет и кариеси.", "alternatives": ["Стевия", "Еритритол", "Мед"]},
-        "en": {"name": "Sugar", "effect": "Causes sharp insulin spikes, risks of obesity, type 2 diabetes, and tooth decay.", "alternatives": ["Stevia", "Erythritol", "Honey"]}
-    },
-    "глюкоз": {
-        "severity": "high",
-        "bg": {"name": "Глюкозно-фруктозен сироп", "effect": "Рязко натоварва черния дроб, превръща се директно в мазнини, уврежда метаболизма.", "alternatives": ["Продукти без добавена захар", "Пресни плодове"]},
-        "en": {"name": "Glucose-Fructose Syrup / HFCS", "effect": "Strains the liver, converts directly into fat, disrupts metabolism.", "alternatives": ["No added sugar products", "Fresh fruits"]}
-    },
-    "glucose": {
-        "severity": "high",
-        "bg": {"name": "Глюкозно-фруктозен сироп", "effect": "Рязко натоварва черния дроб, превръща се директно в мазнини, уврежда метаболизма.", "alternatives": ["Продукти без добавена захар", "Пресни плодове"]},
-        "en": {"name": "Glucose-Fructose Syrup / HFCS", "effect": "Strains the liver, converts directly into fat, disrupts metabolism.", "alternatives": ["No added sugar products", "Fresh fruits"]}
-    },
-    "алкохол": {
-        "severity": "high",
-        "bg": {"name": "Алкохол (Етанол)", "effect": "Токсичен за черния дроб и нервната система. Силно дехидратира тялото.", "alternatives": ["Вода", "Натурален студен чай", "Безалкохолен коктейл"]},
-        "en": {"name": "Alcohol (Ethanol)", "effect": "Toxic to the liver and nervous system. Causes severe dehydration.", "alternatives": ["Water", "Natural iced tea", "Mocktails"]}
-    },
-    "alcohol": {
-        "severity": "high",
-        "bg": {"name": "Алкохол (Етанол)", "effect": "Токсичен за черния дроб и нервната система. Силно дехидратира тялото.", "alternatives": ["Вода", "Натурален студен чай", "Безалкохолен коктейл"]},
-        "en": {"name": "Alcohol (Ethanol)", "effect": "Toxic to the liver and nervous system. Causes severe dehydration.", "alternatives": ["Water", "Natural iced tea", "Mocktails"]}
-    },
-    "малц": {
-        "severity": "medium",
-        "bg": {"name": "Ечемичен малц / Малтодекстрин", "effect": "Има изключително висок гликемичен индекс (по-висок от захарта). Съдържа глутен.", "alternatives": ["Овесени брашна", "Продукти без глутен"]},
-        "en": {"name": "Barley Malt / Maltodextrin", "effect": "Has an extremely high glycemic index (higher than sugar). Contains gluten.", "alternatives": ["Oat flour", "Gluten-free alternatives"]}
-    },
-    "malt": {
-        "severity": "medium",
-        "bg": {"name": "Ечемичен малц / Малтодекстрин", "effect": "Има изключително висок гликемичен индекс (по-висок от захарта). Съдържа глутен.", "alternatives": ["Овесени брашна", "Продукти без глутен"]},
-        "en": {"name": "Barley Malt / Maltodextrin", "effect": "Has an extremely high glycemic index (higher than sugar). Contains gluten.", "alternatives": ["Oat flour", "Gluten-free alternatives"]}
-    },
-    "палмово": {
-        "severity": "high",
-        "bg": {"name": "Палмово масло", "effect": "Богато на наситени мазнини, които запушват артериите и вдигат лошия холестерол (LDL).", "alternatives": ["Студено пресован зехтин", "Краве масло", "Кокосово масло"]},
-        "en": {"name": "Palm Oil", "effect": "High in saturated fats, which can clog arteries and increase bad cholesterol (LDL).", "alternatives": ["Extra virgin olive oil", "Butter", "Coconut oil"]}
-    },
-    "palm": {
-        "severity": "high",
-        "bg": {"name": "Палмово масло", "effect": "Богато на наситени мазнини, които запушват артериите и вдигат лошия холестерол (LDL).", "alternatives": ["Студено пресован зехтин", "Краве масло", "Кокосово масло"]},
-        "en": {"name": "Palm Oil", "effect": "High in saturated fats, which can clog arteries and increase bad cholesterol (LDL).", "alternatives": ["Extra virgin olive oil", "Butter", "Coconut oil"]}
-    },
-    "e211": {
-        "severity": "high",
-        "bg": {"name": "Е211 (Натриев бензоат)", "effect": "Химически консервант. В комбинация с Витамин Ц може да образува бензен (канцероген).", "alternatives": ["Продукти без консерванти"]},
-        "en": {"name": "E211 (Sodium Benzoate)", "effect": "Chemical preservative. When combined with Vitamin C, it can form benzene.", "alternatives": ["Preservative-free food"]}
-    },
-    "е211": {
-        "severity": "high",
-        "bg": {"name": "Е211 (Натриев бензоат)", "effect": "Химически консервант. В комбинация с Витамин Ц може да образува бензен (канцероген).", "alternatives": ["Продукти без консерванти"]},
-        "en": {"name": "E211 (Sodium Benzoate)", "effect": "Chemical preservative. When combined with Vitamin C, it can form benzene.", "alternatives": ["Preservative-free food"]}
-    }
-}
-
-# Избор на език
-lang_choice = st.sidebar.selectbox("Изберете език / Choose language", ["Български (BG)", "English (EN)"])
-lang = "bg" if "Български" in lang_choice else "en"
-
-if lang == "bg":
-    st.title("🥗 Скенер за вредни съставки")
-    st.write("Снимайте етикета със съставките на продукта.")
-    capture_label = "Насочете камерата към текста:"
-else:
-    st.title("🥗 Ingredient Safety Scanner")
-    st.write("Take a photo of the ingredients list on the label.")
-    capture_label = "Point your camera at the text:"
-
-img_file = st.camera_input(capture_label)
-
-def ocr_space_file(img_bytes, target_lang):
-    """Изпраща снимката към безплатния OCR.Space API за разпознаване на текст"""
-    api_lang = "bul" if target_lang == "bg" else "eng"
-    try:
-        # Използваме публичния безплатен ключ на OCR.Space ('helloworld')
-        payload = {
-            'apikey': 'helloworld',
-            'language': api_lang,
-            'isOverlayRequired': False,
-            'scale': True
-        }
-        files = {'filename': ('image.jpg', img_bytes, 'image/jpeg')}
-        response = requests.post('https://api.ocr.space/parse/image', data=payload, files=files)
-        result = response.json()
-        
-        if result.get("OCRExitCode") == 1:
-            parsed_text = result["ParsedResults"][0]["ParsedText"]
-            return parsed_text
-        else:
-            return ""
-    except Exception:
-        return ""
-
-if img_file is not None:
-    st.image(img_file, caption="Сканирана снимка" if lang == "bg" else "Scanned image")
-    
-    with st.spinner("Анализиране на текста онлайн..." if lang == "bg" else "Analyzing text online..."):
-        # Преобразуване на снимката в байтове
-        img_bytes = img_file.getvalue()
-        
-        # Сканиране чрез безплатното онлайн API
-        full_text = ocr_space_file(img_bytes, lang)
-        
-        # Ако първият избор на език не върне нищо, пробваме с другия (за максимално покритие)
-        if not full_text.strip():
-            backup_lang = "en" if lang == "bg" else "bg"
-            full_text = ocr_space_file(img_bytes, backup_lang)
-
-        st.subheader("Прочетен текст от продукта:" if lang == "bg" else "Detected Text from Product:")
-        if full_text.strip():
-            st.info(full_text)
-        else:
-            st.error("Не беше разпознат текст. Моля, снимайте по-отблизо, на светлина и фокус." if lang == "bg" else "No text detected. Please take a closer picture with better lighting.")
-            st.stop()
-        
-        # Търсене в базата данни
-        text_lower = full_text.lower()
-        found_ingredients = []
-        high_risk_count = 0
-        medium_risk_count = 0
-        
-        for key, info in INGREDIENTS_DB.items():
-            if re.search(key, text_lower):
-                if info[lang]["name"] not in [i["name"] for i in found_ingredients]:
-                    found_ingredients.append(info[lang])
-                    if info["severity"] == "high":
-                        high_risk_count += 1
-                    elif info["severity"] == "medium":
-                        medium_risk_count += 1
-        
-        st.divider()
-        st.subheader("ЗДРАВНА ОЦЕНКА:" if lang == "bg" else "HEALTH EVALUATION:")
-        
-        if not found_ingredients:
-            st.success("✅ ПОЛЕЗЕН / ЧИСТ ПРОДУКТ! Не бяха открити критични вредни съставки." if lang == "bg" else "✅ HEALTHY / CLEAN PRODUCT! No critical harmful ingredients detected.")
-        else:
-            if high_risk_count >= 1 or medium_risk_count >= 3:
-                st.error("🚨 ВРЕДЕН ПРОДУКТ! Избягвайте консумацията!" if lang == "bg" else "🚨 HARMFUL PRODUCT! Avoid consuming!")
-                show_alternatives = True
-            else:
-                st.warning("⚠️ СРЕДНО ПОЛЕЗЕН. Консумирайте в ограничени количества." if lang == "bg" else "⚠️ MODERATELY HEALTHY. Consume in limited quantities.")
-                show_alternatives = False
-            
-            st.write("🔍 **Открити съставки:**" if lang == "bg" else "🔍 **Detected ingredients:**")
-            all_alternatives = set()
-            for ing in found_ingredients:
-                st.markdown(f"• 🛑 **{ing['name']}** — {ing['effect']}")
                 if show_alternatives:
                     for alt in ing["alternatives"]:
                         all_alternatives.add(alt)
