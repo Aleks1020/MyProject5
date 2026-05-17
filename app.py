@@ -54,38 +54,6 @@ INGREDIENTS_DB = {
         "bg": {"name": "Глюкозно-фруктозен сироп", "effect": "Рязко натоварва черния дроб, превръща се директно в мазнини, уврежда метаболизма.", "alternatives": ["Продукти без добавена захар", "Пресни плодове"]},
         "en": {"name": "Glucose-Fructose Syrup / HFCS", "effect": "Strains the liver, converts directly into fat, disrupts metabolism.", "alternatives": ["No added sugar products", "Fresh fruits"]}
     },
-    "фруктоза": {
-        "severity": "medium",
-        "bg": {"name": "Добавена Фруктоза", "effect": "Когато е изолирана (не от цял плод), води до омазняване на черния дроб (стеатоза).", "alternatives": ["Цял пресен плод"]},
-        "en": {"name": "Added Fructose", "effect": "When isolated (not from whole fruit), it leads to non-alcoholic fatty liver disease.", "alternatives": ["Whole fresh fruit"]}
-    },
-    "fructose": {
-        "severity": "medium",
-        "bg": {"name": "Добавена Фруктоза", "effect": "Когато е изолирана (не от цял плод), води до омазняване на черния дроб (стеатоза).", "alternatives": ["Цял пресен плод"]},
-        "en": {"name": "Added Fructose", "effect": "When isolated (not from whole fruit), it leads to non-alcoholic fatty liver disease.", "alternatives": ["Whole fresh fruit"]}
-    },
-
-    # --- СПИСЪК: МАЛЦ, ЕЧЕМИК И ГЛУТЕНОВИ ---
-    "малц": {
-        "severity": "medium",
-        "bg": {"name": "Ечемичен малц / Малтодекстрин", "effect": "Има изключително висок гликемичен индекс (по-висок от захарта). Съдържа глутен.", "alternatives": ["Овесени брашна", "Продукти без глутен"]},
-        "en": {"name": "Barley Malt / Maltodextrin", "effect": "Has an extremely high glycemic index (higher than sugar). Contains gluten.", "alternatives": ["Oat flour", "Gluten-free alternatives"]}
-    },
-    "malt": {
-        "severity": "medium",
-        "bg": {"name": "Ечемичен малц / Малтодекстрин", "effect": "Има изключително висок гликемичен индекс (по-висок от захарта). Съдържа глутен.", "alternatives": ["Овесени брашна", "Продукти без глутен"]},
-        "en": {"name": "Barley Malt / Maltodextrin", "effect": "Has an extremely high glycemic index (higher than sugar). Contains gluten.", "alternatives": ["Oat flour", "Gluten-free alternatives"]}
-    },
-    "ечемик": {
-        "severity": "medium",
-        "bg": {"name": "Ечемик (Глутен)", "effect": "Може да предизвика подуване, тежест и възпаления при хора с чувствителност към глутен.", "alternatives": ["Ориз", "Елда", "Киноа"]},
-        "en": {"name": "Barley (Gluten)", "effect": "Can cause bloating, digestive discomfort, and inflammation in gluten-sensitive people.", "alternatives": ["Rice", "Buckwheat", "Quinoa"]}
-    },
-    "barley": {
-        "severity": "medium",
-        "bg": {"name": "Ечемик (Глутен)", "effect": "Може да предизвика подуване, тежест и възпаления при хора с чувствителност към глутен.", "alternatives": ["Ориз", "Елда", "Киноа"]},
-        "en": {"name": "Barley (Gluten)", "effect": "Can cause bloating, digestive discomfort, and inflammation in gluten-sensitive people.", "alternatives": ["Rice", "Buckwheat", "Quinoa"]}
-    },
 
     # --- СПИСЪК: ХИДРОГЕНИРАНИ МАЗНИНИ ---
     "палмово": {
@@ -109,36 +77,26 @@ INGREDIENTS_DB = {
         "en": {"name": "Hydrogenated Fats (Trans Fats)", "effect": "The most dangerous fats. Directly linked to heart disease, strokes, and systemic inflammation.", "alternatives": ["Unrefined vegetable oils"]}
     },
 
-    # --- СПИСЪК: ОПАСНИ Е-ТА (КОНСЕРВАНТИ И ОЦВЕТИТЕЛИ) ---
+    # --- СПИСЪК: ОПАСНИ Е-ТА ---
     "e211": {
         "severity": "high",
-        "bg": {"name": "Е211 (Натриев бензоат)", "effect": "Химически консервант. В комбинация с Витамин Ц може да образува бензен, който е силен канцероген.", "alternatives": ["Продукти без консерванти", "Домашно приготвена храна"]},
-        "en": {"name": "E211 (Sodium Benzoate)", "effect": "Chemical preservative. When combined with Vitamin C, it can form benzene, a known carcinogen.", "alternatives": ["Preservative-free food", "Homemade food"]}
+        "bg": {"name": "Е211 (Натриев бензоат)", "effect": "Химически консервант. В комбинация с Витамин Ц може да образува бензен, който е силен канцероген.", "alternatives": ["Продукти без консерванти"]},
+        "en": {"name": "E211 (Sodium Benzoate)", "effect": "Preservative. Can form benzene (carcinogen) when mixed with Vitamin C.", "alternatives": ["Preservative-free food"]}
     },
     "е211": { 
         "severity": "high",
-        "bg": {"name": "Е211 (Натриев бензоат)", "effect": "Химически консервант. В комбинация с Витамин Ц може да образува бензен, който е силен канцероген.", "alternatives": ["Продукти без консерванти", "Домашно приготвена храна"]},
-        "en": {"name": "E211 (Sodium Benzoate)", "effect": "Chemical preservative. When combined with Vitamin C, it can form benzene, a known carcinogen.", "alternatives": ["Preservative-free food", "Homemade food"]}
+        "bg": {"name": "Е211 (Натриев бензоат)", "effect": "Химически консервант. В комбинация с Витамин Ц може да образува бензен, който е силен канцероген.", "alternatives": ["Продукти без консерванти"]},
+        "en": {"name": "E211 (Sodium Benzoate)", "effect": "Preservative. Can form benzene (carcinogen) when mixed with Vitamin C.", "alternatives": ["Preservative-free food"]}
     },
     "e621": {
         "severity": "high",
-        "bg": {"name": "Е621 (Мононатриев глутамат)", "effect": "Изкуствен подобрител на вкуса. Предизвиква пристрастяване, главоболие, сърцебиене и засилен апетит.", "alternatives": ["Естествена хималайска сол", "Сухи билки и чисти подправки"]},
-        "en": {"name": "E621 (Monosodium Glutamate / MSG)", "effect": "Excitotoxin that enhances flavor. Can cause headaches, sweating, heart palpitations, and overeating.", "alternatives": ["Natural sea salt", "Pure dry herbs and spices"]}
+        "bg": {"name": "Е621 (Мононатриев глутамат)", "effect": "Изкуствен подобрител на вкуса. Предизвиква изкуствен апетит и главоболие.", "alternatives": ["Чисти подправки", "Хималайска сол"]},
+        "en": {"name": "E621 (Monosodium Glutamate / MSG)", "effect": "Flavor enhancer. Can trigger headaches and overeating.", "alternatives": ["Pure spices", "Sea salt"]}
     },
     "е621": {
         "severity": "high",
-        "bg": {"name": "Е621 (Мононатриев глутамат)", "effect": "Изкуствен подобрител на вкуса. Предизвиква пристрастяване, главоболие, сърцебиене и засилен апетит.", "alternatives": ["Естествена хималайска сол", "Сухи билки и чисти подправки"]},
-        "en": {"name": "E621 (Monosodium Glutamate / MSG)", "effect": "Excitotoxin that enhances flavor. Can cause headaches, sweating, heart palpitations, and overeating.", "alternatives": ["Natural sea salt", "Pure dry herbs and spices"]}
-    },
-    "e250": {
-        "severity": "high",
-        "bg": {"name": "Е250 (Натриев нитрит)", "effect": "Използва се масово в колбасите за розов цвят. Силно toxic в по-големи количества, класифициран като канцерогенен.", "alternatives": ["Прясно чисто месо", "Продукти без нитрити"]},
-        "en": {"name": "E250 (Sodium Nitrite)", "effect": "Commonly used in cured meats. Forms nitrosamines in the stomach, which are highly carcinogenic.", "alternatives": ["Fresh un-cured meat", "Nitrite-free products"]}
-    },
-    "е250": {
-        "severity": "high",
-        "bg": {"name": "Е250 (Натриев нитрит)", "effect": "Използва се масово в колбасите за розов цвят. Силно toxic в по-големи количества, класифициран като канцерогенен.", "alternatives": ["Прясно чисто месо", "Продукти без нитрити"]},
-        "en": {"name": "E250 (Sodium Nitrite)", "effect": "Commonly used in cured meats. Forms nitrosamines in the stomach, which are highly carcinogenic.", "alternatives": ["Fresh un-cured meat", "Nitrite-free products"]}
+        "bg": {"name": "Е621 (Мононатриев глутамат)", "effect": "Изкуствен подобрител на вкуса. Предизвиква изкуствен апетит и главоболие.", "alternatives": ["Чисти подправки", "Хималайска сол"]},
+        "en": {"name": "E621 (Monosodium Glutamate / MSG)", "effect": "Flavor enhancer. Can trigger headaches and overeating.", "alternatives": ["Pure spices", "Sea salt"]}
     }
 }
 
@@ -150,21 +108,37 @@ lang = "bg" if "Български" in lang_choice else "en"
 
 if lang == "bg":
     st.title("🥗 Скенер за вредни съставки")
-    st.write("Снимайте списъка със съставките от етикета на продукта, за да проверим дали е полезен.")
-    capture_label = "Насочете камерата към текста на етикета:"
+    st.write("Качете снимка на етикета или го заснемете с камерата, за да го анализираме.")
+    tab1_title, tab2_title = "📁 Качване от галерия", "📷 Снимка на момента"
+    upload_label = "Изберете снимка от устройството си:"
+    camera_label = "Насочете камерата към етикета:"
 else:
     st.title("🥗 Ingredient Safety Scanner")
-    st.write("Take a photo of the ingredients text on the product label to check its safety.")
-    capture_label = "Point your camera at the label text:"
+    st.write("Upload a label photo or take one using your camera for analysis.")
+    tab1_title, tab2_title = "📁 Upload from Gallery", "📷 Take Live Photo"
+    upload_label = "Choose an image file from your device:"
+    camera_label = "Point your camera at the label text:"
 
-img_file = st.camera_input(capture_label)
+# Създаване на раздели (Tabs) за двата метода на въвеждане
+tab1, tab2 = st.tabs([tab1_title, tab2_title])
+img_file = None
+
+with tab1:
+    uploaded_file = st.file_uploader(upload_label, type=["jpg", "jpeg", "png"])
+    if uploaded_file is not None:
+        img_file = uploaded_file
+
+with tab2:
+    camera_file = st.camera_input(camera_label)
+    if camera_file is not None:
+        img_file = camera_file
 
 # Функция за уеб-базиран OCR чрез OCR.Space API
 def ocr_space_file(img_bytes, target_lang):
     api_lang = "bul" if target_lang == "bg" else "eng"
     try:
         payload = {
-            'apikey': 'helloworld',  # Публичен безплатен ключ
+            'apikey': 'helloworld',  # Безплатен публичен ключ
             'language': api_lang,
             'isOverlayRequired': False,
             'scale': True
@@ -183,13 +157,13 @@ def ocr_space_file(img_bytes, target_lang):
 # 3. ЛОГИКА ЗА СКАНИРАНЕ И АНАЛИЗ
 # ==============================================================================
 if img_file is not None:
-    st.image(img_file, caption="Сканирана снимка" if lang == "bg" else "Scanned image")
+    st.image(img_file, caption="Заредена снимка" if lang == "bg" else "Loaded image", use_container_width=True)
     
     with st.spinner("Четене на етикета..." if lang == "bg" else "Reading label..."):
         img_bytes = img_file.getvalue()
         full_text = ocr_space_file(img_bytes, lang)
         
-        # Ако не разпознае нищо на избрания език, опитва с другия
+        # Ако липсва текст на избрания език, тестваме с другия за сигурност
         if not full_text.strip():
             backup_lang = "en" if lang == "bg" else "bg"
             full_text = ocr_space_file(img_bytes, backup_lang)
@@ -198,10 +172,10 @@ if img_file is not None:
         if full_text.strip():
             st.info(full_text)
         else:
-            st.error("Не беше разпознат текст. Моля, опитайте пак при по-добра светлина и фокус." if lang == "bg" else "No text detected. Please try again with better lighting and focus.")
+            st.error("Не беше разпознат текст. Моля, уверете се, че снимката е на фокус, текстът е хоризонтален и има добра светлина." if lang == "bg" else "No text detected. Please make sure the photo is focused, text is horizontal, and lighting is good.")
             st.stop()
         
-        # Търсене на съвпадения в текста
+        # Търсене на съвпадения
         text_lower = full_text.lower()
         found_ingredients = []
         high_risk_count = 0
