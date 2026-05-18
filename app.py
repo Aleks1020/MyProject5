@@ -71,6 +71,15 @@ INGREDIENTS_DB = {
         "bg": {"name": "Е412 (Гума гуар)", "effect": "Стабилизатор. При големи количества действа слабително.", "alts": []},
         "en": {"name": "E412 (Guar Gum)", "effect": "Stabilizer. Laxative effect in large amounts.", "alts": []}
     },
+    "е471": {
+        "severity": "medium",
+        "bg": {"name": "Е471 (Моно- и диглицериди)", "effect": "Емулгатор. Може да съдържа трансмазнини и да пречи на метаболизма.", "alts": ["butter"]},
+        "en": {"name": "E471 (Mono- and diglycerides)", "effect": "Emulsifier. May contain trans fats and disrupt metabolism.", "alts": ["butter"]}
+    },
+    "е472": {
+        "severity": "medium",
+        "bg": {"name": "Е472 (Естери на моно- и диглицериди)", "effect": "Синтетични мазнини. Могат да причинят храносмилателни проблеми.", "alts": ["butter"]},
+        "en": {"name": "E472 (Esters of mono- and diglycerides)", "effect": "Synthetic fats. Can cause digestive issues.", "alts": ["butter"]}
 
     # --- ТВОИТЕ Е200 СЕРИЯ ---
     "е250": {
