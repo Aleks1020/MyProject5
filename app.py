@@ -80,7 +80,7 @@ INGREDIENTS_DB = {
         "severity": "medium",
         "bg": {"name": "Е472 (Естери на моно- и диглицериди)", "effect": "Синтетични мазнини. Могат да причинят храносмилателни проблеми.", "alts": ["butter"]},
         "en": {"name": "E472 (Esters of mono- and diglycerides)", "effect": "Synthetic fats. Can cause digestive issues.", "alts": ["butter"]}
-
+    },
     # --- ТВОИТЕ Е200 СЕРИЯ ---
     "е250": {
         "severity": "high",
